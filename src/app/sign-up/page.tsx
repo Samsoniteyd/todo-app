@@ -15,7 +15,7 @@ export default function Signup() {
     useCreateUserWithEmailAndPassword(auth);
 
   // Handle sign up
-  const handleSignup = async (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (password !== confirmPassword) {
       setError("Passwords do not match");
@@ -28,7 +28,12 @@ export default function Signup() {
       setPassword("");
       router.push("/sign-in");
     } catch (err: any) {
-      setError(err.message);
+      //   setError(err.message);
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unknown error occurred");
+      }
     }
   };
 

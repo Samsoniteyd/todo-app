@@ -13,7 +13,7 @@ export default function Signin() {
   const router = useRouter();
 
   // Handle sign-in
-  const handleSignin = async (e: React.FormEvent) => {
+  const handleSignin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     try {
@@ -21,9 +21,14 @@ export default function Signin() {
       console.log({ res });
       setEmail(" ");
       setPassword(" ");
-      router.push("/"); // Redirect to dashboard on successful login
-    } catch (err: any) {
-      setError(err.message);
+      router.push("/");
+    } catch (err: unknown) {
+      //   setError(err.message);
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An unknown error occurred");
+      }
     }
   };
 

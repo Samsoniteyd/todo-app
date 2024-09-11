@@ -15,6 +15,7 @@ import {
 import { db, auth } from "./firebase/config";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 // import { useAuthState } from "react-firebase-hooks/auth";
+import { User } from "firebase/auth";
 
 interface Todo {
   id: string;
@@ -28,7 +29,7 @@ export default function TodoApp() {
   const [newTask, setNewTask] = useState<string>("");
   const [editId, setEditId] = useState<string | null>(null);
   const [editedTask, setEditedTask] = useState<string>("");
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
 
   // Fetch todos for the logged-in user
