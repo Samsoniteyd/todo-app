@@ -26,7 +26,7 @@ export default function Signup() {
       console.log({ res });
       setEmail("");
       setPassword("");
-      router.push("/sign-in");
+      router.push("/");
     } catch (err: any) {
       //   setError(err.message);
       if (err instanceof Error) {

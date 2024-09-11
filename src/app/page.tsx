@@ -1,201 +1,99 @@
 "use client";
-import { useEffect, useState } from "react";
-import { FaEdit, FaTrashAlt, FaCheckCircle } from "react-icons/fa";
-import { useRouter } from "next/navigation"; // Import useRouter for navigation
-import {
-  collection,
-  addDoc,
-  onSnapshot,
-  query,
-  where,
-  updateDoc,
-  deleteDoc,
-  doc,
-} from "firebase/firestore";
-import { db, auth } from "./firebase/config";
-import { onAuthStateChanged, signOut } from "firebase/auth";
-// import { useAuthState } from "react-firebase-hooks/auth";
-import { User } from "firebase/auth";
+import { useState } from "react";
+import { useSignInWithEmailAndPassword } from "react-firebase-hooks/auth";
+import { auth } from "./firebase/config";
+import { useRouter } from "next/navigation";
 
-interface Todo {
-  id: string;
-  task: string;
-  completed: boolean;
-  userId: string;
-}
-
-export default function TodoApp() {
-  const [todos, setTodos] = useState<Todo[]>([]);
-  const [newTask, setNewTask] = useState<string>("");
-  const [editId, setEditId] = useState<string | null>(null);
-  const [editedTask, setEditedTask] = useState<string>("");
-  const [user, setUser] = useState<User | null>(null);
+export default function Signin() {
+  // Controlled input state
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [signInWithEmailAndPassword] = useSignInWithEmailAndPassword(auth);
   const router = useRouter();
 
-  // Fetch todos for the logged-in user
-  useEffect(() => {
-    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
-      if (currentUser) {
-        setUser(currentUser);
-
-        const todosQuery = query(
-          collection(db, "todos"),
-          where("userId", "==", currentUser.uid)
-        );
-
-        const unsubscribe = onSnapshot(todosQuery, (snapshot) => {
-          const fetchedTodos: Todo[] = snapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          })) as Todo[];
-
-          setTodos(fetchedTodos);
-        });
-
-        return () => unsubscribe();
+  // Handle sign-in
+  const handleSignin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError("");
+    try {
+      const res = await signInWithEmailAndPassword(email, password);
+      console.log({ res });
+      setEmail(" ");
+      setPassword(" ");
+      router.push("/todo");
+    } catch (err: unknown) {
+      //   setError(err.message);
+      if (err instanceof Error) {
+        setError(err.message);
       } else {
-        setUser(null);
-        setTodos([]);
-        router.push("/sign-in");
+        setError("An unknown error occurred");
       }
-    });
-
-    return () => unsubscribeAuth();
-  }, [router]);
-
-  // Add a new task to Firestore for the logged-in user
-  const addTask = async () => {
-    if (newTask.trim() !== "" && user) {
-      await addDoc(collection(db, "todos"), {
-        task: newTask,
-        completed: false,
-        userId: user.uid,
-      });
-      setNewTask("");
     }
   };
 
-  // Update an existing task in Firestore
-  const updateTask = async (id: string) => {
-    const taskDoc = doc(db, "todos", id);
-    await updateDoc(taskDoc, { task: editedTask });
-    setEditId(null);
-  };
-
-  // Delete a task from Firestore
-  const deleteTask = async (id: string) => {
-    const taskDoc = doc(db, "todos", id);
-    await deleteDoc(taskDoc);
-  };
-
-  // Toggle task completion status in Firestore
-  const toggleComplete = async (id: string, completed: boolean) => {
-    const taskDoc = doc(db, "todos", id);
-    await updateDoc(taskDoc, { completed: !completed });
-  };
-
-  // Handle user logout
-  const handleLogout = async () => {
-    await signOut(auth);
-    router.push("/sign-in");
-  };
-
   return (
-    <>
-      {/* Logout Button */}
-      {user && (
-        <div className="flex justify-end  mt-9 mr-9">
-          <button
-            className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600"
-            onClick={handleLogout}
-          >
-            Logout
-          </button>
-        </div>
-      )}
+    <div className="min-h-screen flex items-center justify-center ">
+      <div className="w-full max-w-md p-8 space-y-6 bg-white shadow-lg rounded-lg">
+        <h2 className="text-center text-3xl font-extrabold text-gray-900">
+          Sign In to your account
+        </h2>
 
-      <div className="max-w-md mx-auto mt-10 p-5 bg-white shadow-lg rounded-lg dark:bg-gray-800">
-        <h1 className="text-2xl font-bold text-center mb-5 dark:text-white">
-          Todo List
-        </h1>
-
-        {/* Add Task Input */}
-        {user && (
-          <div className="flex items-center mb-4">
-            <input
-              type="text"
-              className="w-full px-3 py-2 border rounded-l-md dark:bg-gray-700 dark:text-white"
-              placeholder="Add a new task..."
-              value={newTask}
-              onChange={(e) => setNewTask(e.target.value)}
-            />
-            <button
-              className="bg-indigo-600 text-white px-4 py-2 rounded-r-md hover:bg-indigo-700"
-              onClick={addTask}
+        {error && (
+          <div className="text-red-500 text-sm text-center">{error}</div>
+        )}
+        <form onSubmit={handleSignin} className="space-y-6">
+          <div>
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700"
             >
-              Add
+              Email Address
+            </label>
+            <input
+              type="email"
+              id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700 "
+            >
+              Password
+            </label>
+            <input
+              type="password"
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            />
+          </div>
+
+          <div>
+            <button
+              type="submit"
+              className="w-full bg-indigo-600 text-white py-2 px-4 rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            >
+              Sign In
             </button>
           </div>
-        )}
+        </form>
 
-        <ul className="space-y-3">
-          {todos.map((todo) => (
-            <li
-              key={todo.id}
-              className={`flex justify-between items-center p-3 border rounded-md ${todo.completed}`}
-            >
-              <div className="flex items-center space-x-2">
-                <FaCheckCircle
-                  className={`cursor-pointer ${
-                    todo.completed ? "text-green-500" : "text-gray-400"
-                  }`}
-                  onClick={() => toggleComplete(todo.id, todo.completed)}
-                />
-                {editId === todo.id ? (
-                  <input
-                    type="text"
-                    className="px-2 py-1 border rounded-md "
-                    value={editedTask}
-                    onChange={(e) => setEditedTask(e.target.value)}
-                  />
-                ) : (
-                  <span
-                    className={`text-lg ${
-                      todo.completed ? "line-through text-gray-500" : ""
-                    } `}
-                  >
-                    {todo.task}
-                  </span>
-                )}
-              </div>
-
-              {/* Icons for Edit and Delete */}
-              <div className="flex space-x-3">
-                {editId === todo.id ? (
-                  <button
-                    className="text-blue-500 hover:text-blue-700"
-                    onClick={() => updateTask(todo.id)}
-                  >
-                    Save
-                  </button>
-                ) : (
-                  <FaEdit
-                    className="text-blue-500 cursor-pointer hover:text-blue-700"
-                    onClick={() => {
-                      setEditId(todo.id);
-                      setEditedTask(todo.task);
-                    }}
-                  />
-                )}
-                <FaTrashAlt
-                  className="text-red-500 cursor-pointer hover:text-red-700"
-                  onClick={() => deleteTask(todo.id)}
-                />
-              </div>
-            </li>
-          ))}
-        </ul>
+        <p className="text-center text-sm text-gray-600 ">
+          Don&apos;t have an account?{" "}
+          <a href="/sign-up" className="text-indigo-600 hover:text-indigo-500 ">
+            Sign Up
+          </a>
+        </p>
       </div>
-    </>
+    </div>
   );
 }
