@@ -1,101 +1,200 @@
-import Image from "next/image";
+"use client";
+import { useEffect, useState } from "react";
+import { FaEdit, FaTrashAlt, FaCheckCircle } from "react-icons/fa";
+import { useRouter } from "next/navigation"; // Import useRouter for navigation
+import {
+  collection,
+  addDoc,
+  onSnapshot,
+  query,
+  where,
+  updateDoc,
+  deleteDoc,
+  doc,
+} from "firebase/firestore";
+import { db, auth } from "./firebase/config";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+// import { useAuthState } from "react-firebase-hooks/auth";
 
-export default function Home() {
+interface Todo {
+  id: string;
+  task: string;
+  completed: boolean;
+  userId: string;
+}
+
+export default function TodoApp() {
+  const [todos, setTodos] = useState<Todo[]>([]);
+  const [newTask, setNewTask] = useState<string>("");
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editedTask, setEditedTask] = useState<string>("");
+  const [user, setUser] = useState<any>(null);
+  const router = useRouter();
+
+  // Fetch todos for the logged-in user
+  useEffect(() => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
+      if (currentUser) {
+        setUser(currentUser);
+
+        const todosQuery = query(
+          collection(db, "todos"),
+          where("userId", "==", currentUser.uid)
+        );
+
+        const unsubscribe = onSnapshot(todosQuery, (snapshot) => {
+          const fetchedTodos: Todo[] = snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          })) as Todo[];
+
+          setTodos(fetchedTodos);
+        });
+
+        return () => unsubscribe();
+      } else {
+        setUser(null);
+        setTodos([]);
+        router.push("/sign-in");
+      }
+    });
+
+    return () => unsubscribeAuth();
+  }, [router]);
+
+  // Add a new task to Firestore for the logged-in user
+  const addTask = async () => {
+    if (newTask.trim() !== "" && user) {
+      await addDoc(collection(db, "todos"), {
+        task: newTask,
+        completed: false,
+        userId: user.uid,
+      });
+      setNewTask("");
+    }
+  };
+
+  // Update an existing task in Firestore
+  const updateTask = async (id: string) => {
+    const taskDoc = doc(db, "todos", id);
+    await updateDoc(taskDoc, { task: editedTask });
+    setEditId(null);
+  };
+
+  // Delete a task from Firestore
+  const deleteTask = async (id: string) => {
+    const taskDoc = doc(db, "todos", id);
+    await deleteDoc(taskDoc);
+  };
+
+  // Toggle task completion status in Firestore
+  const toggleComplete = async (id: string, completed: boolean) => {
+    const taskDoc = doc(db, "todos", id);
+    await updateDoc(taskDoc, { completed: !completed });
+  };
+
+  // Handle user logout
+  const handleLogout = async () => {
+    await signOut(auth);
+    router.push("/sign-in");
+  };
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <>
+      {/* Logout Button */}
+      {user && (
+        <div className="flex justify-end  mt-9 mr-9">
+          <button
+            className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600"
+            onClick={handleLogout}
           >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            Logout
+          </button>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      )}
+
+      <div className="max-w-md mx-auto mt-10 p-5 bg-white shadow-lg rounded-lg dark:bg-gray-800">
+        <h1 className="text-2xl font-bold text-center mb-5 dark:text-white">
+          Todo List
+        </h1>
+
+        {/* Add Task Input */}
+        {user && (
+          <div className="flex items-center mb-4">
+            <input
+              type="text"
+              className="w-full px-3 py-2 border rounded-l-md dark:bg-gray-700 dark:text-white"
+              placeholder="Add a new task..."
+              value={newTask}
+              onChange={(e) => setNewTask(e.target.value)}
+            />
+            <button
+              className="bg-indigo-600 text-white px-4 py-2 rounded-r-md hover:bg-indigo-700"
+              onClick={addTask}
+            >
+              Add
+            </button>
+          </div>
+        )}
+
+        <ul className="space-y-3">
+          {todos.map((todo) => (
+            <li
+              key={todo.id}
+              className={`flex justify-between items-center p-3 border rounded-md ${todo.completed}`}
+            >
+              <div className="flex items-center space-x-2">
+                <FaCheckCircle
+                  className={`cursor-pointer ${
+                    todo.completed ? "text-green-500" : "text-gray-400"
+                  }`}
+                  onClick={() => toggleComplete(todo.id, todo.completed)}
+                />
+                {editId === todo.id ? (
+                  <input
+                    type="text"
+                    className="px-2 py-1 border rounded-md "
+                    value={editedTask}
+                    onChange={(e) => setEditedTask(e.target.value)}
+                  />
+                ) : (
+                  <span
+                    className={`text-lg ${
+                      todo.completed ? "line-through text-gray-500" : ""
+                    } `}
+                  >
+                    {todo.task}
+                  </span>
+                )}
+              </div>
+
+              {/* Icons for Edit and Delete */}
+              <div className="flex space-x-3">
+                {editId === todo.id ? (
+                  <button
+                    className="text-blue-500 hover:text-blue-700"
+                    onClick={() => updateTask(todo.id)}
+                  >
+                    Save
+                  </button>
+                ) : (
+                  <FaEdit
+                    className="text-blue-500 cursor-pointer hover:text-blue-700"
+                    onClick={() => {
+                      setEditId(todo.id);
+                      setEditedTask(todo.task);
+                    }}
+                  />
+                )}
+                <FaTrashAlt
+                  className="text-red-500 cursor-pointer hover:text-red-700"
+                  onClick={() => deleteTask(todo.id)}
+                />
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </>
   );
 }
