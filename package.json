@@ -29,5 +29,5 @@
   "engines": {
     "node": "18.x"
   },
-  "type": "module" 
+  "type": "commonjs" 
 }
