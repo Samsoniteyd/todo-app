@@ -14,5 +14,6 @@ module.exports = {
     ],
     rules: {
       // Custom ESLint rules
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   };
