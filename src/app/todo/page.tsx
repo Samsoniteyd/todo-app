@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { FaEdit, FaTrashAlt, FaCheckCircle } from "react-icons/fa";
-import { useRouter } from "next/navigation"; // Import useRouter for navigation
+import { useRouter } from "next/navigation";
 import {
   collection,
   addDoc,
@@ -114,12 +114,10 @@ export default function TodoApp() {
         </div>
       )}
 
-      <div className="max-w-md mx-auto mt-10 p-5 bg-white shadow-lg rounded-lg dark:bg-gray-800">
-        <h1 className="text-2xl font-bold text-center mb-5 dark:text-white">
-          Todo List
-        </h1>
+      <div className="max-w-md mx-auto mt-10 p-5 bg-white shadow-lg rounded-lg ">
+        <h1 className="text-2xl font-bold text-center mb-5 ">Todo List</h1>
 
-        {/* Add Task Input */}
+        {/* Task Input */}
         {user && (
           <div className="flex items-center mb-4">
             <input

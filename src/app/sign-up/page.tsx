@@ -5,7 +5,6 @@ import { auth } from "@/app/firebase/config";
 import { useRouter } from "next/navigation";
 
 export default function Signup() {
-  // Controlled input state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");

@@ -5,7 +5,6 @@ import { auth } from "./firebase/config";
 import { useRouter } from "next/navigation";
 
 export default function Signin() {
-  // Controlled input state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
